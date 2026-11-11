@@ -1,0 +1,41 @@
+name: Publish Minecraft Resource Pack
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ObieumHUD-26.3-resourcepack.zip'
+      - '.github/workflows/publish-resourcepack.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout public repository
+        uses: actions/checkout@v4
+
+      - name: Verify ZIP integrity and original SHA-1
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f ObieumHUD-26.3-resourcepack.zip
+          unzip -t ObieumHUD-26.3-resourcepack.zip
+          echo "eec5d2561502f512928bef03fadd22dc734d5e3f  ObieumHUD-26.3-resourcepack.zip" | sha1sum -c -
+
+      - name: Publish release v1.0.0
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view v1.0.0 >/dev/null 2>&1; then
+            gh release upload v1.0.0 ObieumHUD-26.3-resourcepack.zip --clobber
+          else
+            gh release create v1.0.0 ObieumHUD-26.3-resourcepack.zip \
+              --title "옵이음 HUD Resource Pack v1.0.0" \
+              --notes "MyPet + AuraSkills 하단 2줄 HUD 리소스팩 (Paper 26.3 시험 빌드)."
+          fi
